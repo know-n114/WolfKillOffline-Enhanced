@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🐺 狼人杀·无网版</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🐺 狼人杀 · 无网版</h1>
+
+    <!-- 人数选择 -->
+    <div class="section">
+      <label>玩家人数：</label>
+      <select id="playerCount">
+        <option value="4">4人</option>
+        <option value="5">5人</option>
+        <option value="6">6人</option>
+        <option value="7">7人</option>
+        <option value="8">8人</option>
+        <option value="9">9人</option>
+        <option value="10">10人</option>
+        <option value="11">11人</option>
+        <option value="12">12人</option>
+        <option value="13">13人</option>
+        <option value="14">14人</option>
+        <option value="15">15人</option>
+        <option value="16">16人</option>
+        <option value="17">17人</option>
+        <option value="18">18人</option>
+      </select>
+    </div>
+
+    <!-- 创建游戏按钮 -->
+    <button id="createBtn">✅ 创建游戏</button>
+
+    <!-- 加入游戏区域 -->
+    <div class="section">
+      <label>游戏码：</label>
+      <input type="text" id="gameCode" placeholder="输入6位字母数字" maxlength="6" />
+      <button id="joinBtn">👉 加入游戏</button>
+    </div>
+
+    <p class="tip">💡 将此链接分享到微信群，朋友复制游戏码即可同步！</p>
+  </div>
+</body>
+</html>
