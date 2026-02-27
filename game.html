@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎮 狼人杀游戏</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="game-container animated">
+    <div class="header">
+      <h2 id="phaseText">🌙 黑夜来临</h2>
+      <p>你的身份：<span id="myRole">加载中...</span></p>
+    </div>
+
+    <!-- 白天发言区 -->
+    <div id="speechSection" class="section">
+      <textarea id="speechInput" placeholder="请输入你的发言..." rows="4"></textarea>
+      <button id="submitVote">投给【<span id="targetName">张三</span>】</button>
+    </div>
+
+    <!-- 夜间行动区 -->
+    <div id="nightSection" class="section">
+      <div id="nightActions">
+        <p><strong>请闭眼，等待主持人安排...</strong></p>
+        <div id="witchActions" style="display:none;">
+          <p>✨ 女巫：你有1瓶解药和1瓶毒药。</p>
+          <button id="savePlayer">✅ 救人（解药）</button>
+          <button id="poisonPlayer">☠️ 投毒（毒药）</button>
+        </div>
+        <div id="hunterActions" style="display:none;">
+          <p>🔫 猎人：你已死亡，可开枪带走一人。</p>
+          <button id="shootPlayer">🎯 射杀</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 玩家列表 -->
+    <div class="players">
+      <h3>当前玩家：</h3>
+      <div id="playerList"></div>
+    </div>
+
+    <!-- 复活提示 -->
+    <div id="reviveAlert" style="display:none; background:#fff3cd; padding:10px; border-radius:8px; margin-top:15px; text-align:center;">
+      🔄 你已被复活！现在是白天。
+    </div>
+  </div>
+</body>
+</html>
