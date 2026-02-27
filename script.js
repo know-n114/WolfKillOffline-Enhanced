@@ -1,4 +1,8 @@
-// 音效管理器
+// 全局变量
+let userId = '';
+let gameId = '';
+
+// 音效加载
 const audio = {
   night: new Audio('audio/night.mp3'),
   day: new Audio('audio/day.mp3'),
@@ -10,56 +14,35 @@ const audio = {
   revive: new Audio('audio/revive.mp3')
 };
 
-// 动画类
-class Animations {
-  static fadeIn(el, duration = 500) {
-    el.style.opacity = '0';
-    el.style.display = 'block';
-    setTimeout(() => {
-      el.style.transition = `opacity ${duration}ms ease`;
-      el.style.opacity = '1';
-    }, 10);
-  }
-
-  static shake(el) {
-    el.style.transform = 'translateX(5px)';
-    setTimeout(() => {
-      el.style.transform = 'translateX(-5px)';
-      setTimeout(() => {
-        el.style.transform = 'translateX(0)';
-      }, 100);
-    }, 100);
-  }
-
-  static pulse(el) {
-    el.style.transform = 'scale(1.1)';
-    setTimeout(() => {
-      el.style.transform = 'scale(1)';
-    }, 200);
-  }
-
-  static floatUp(el) {
-    el.style.transform = 'translateY(10px)';
-    setTimeout(() => {
-      el.style.transform = 'translateY(0)';
-    }, 300);
-  }
-}
-
-// 全局变量
-let gameId = '';
-let userId = '';
-let myRole = '';
-let gameData = {};
-
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
-  const urlParams = new URLSearchParams(window.location.hash.substring(1));
-  gameId = urlParams.get('code') || 'ABC123';
-  userId = urlParams.get('id') || Math.random().toString(36).substr(2, 8);
+  const urlParams = new URLSearchParams(window.location.search);
+  gameId = urlParams.get('code');
+  userId = urlParams.get('id');
 
-  if (!localStorage.getItem(`game_${gameId}`)) {
-    localStorage.setItem(`game_${gameId}`, JSON.stringify({
+  if (gameId && userId) {
+    // 进入游戏页面
+    const data = JSON.parse(localStorage.getItem(`game_${gameId}`));
+    if (!data) {
+      alert("游戏已过期或不存在！");
+      window.location.href = 'index.html';
+      return;
+    }
+
+    renderGame();
+  } else {
+    // 进入创建页
+    initCreatePage();
+  }
+});
+
+function initCreatePage() {
+  document.getElementById('createBtn')?.addEventListener('click', async () => {
+    const count = parseInt(document.getElementById('playerCount').value);
+    const code = Math.random().toString(36).substr(2, 6).toUpperCase();
+    const hostId = 'HOST_' + Date.now();
+
+    const data = {
       phase: 'waiting',
       players: [],
       votes: {},
@@ -68,173 +51,149 @@ document.addEventListener('DOMContentLoaded', () => {
       poisoned: null,
       deadPlayers: [],
       revived: false,
-      createdAt: Date.now()
-    }));
-  }
+      createdAt: Date.now(),
+      hostId: hostId,
+      totalPlayers: count,
+      currentPlayers: 0
+    };
 
-  const data = JSON.parse(localStorage.getItem(`game_${gameId}`));
-  if (!data.players.some(p => p.id === userId)) {
-    data.players.push({ id: userId, name: '玩家' + Math.floor(Math.random() * 100), role: '' });
-    localStorage.setItem(`game_${gameId}`, JSON.stringify(data));
-  }
+    localStorage.setItem(`game_${code}`, JSON.stringify(data));
 
-  if (!data.players.find(p => p.id === userId)?.role) {
-    const count = data.players.length;
-    const roles = generateRoles(count);
-    const role = roles[Math.floor(Math.random() * roles.length)];
-    data.players = data.players.map(p => 
-      p.id === userId ? { ...p, role } : p
-    );
-    localStorage.setItem(`game_${gameId}`, JSON.stringify(data));
-    myRole = role;
-  }
+    document.getElementById('hostPanel').style.display = 'block';
+    document.getElementById('currentPlayers').textContent = '0';
+    document.getElementById('totalPlayers').textContent = count;
 
-  renderGame();
-});
+    userId = hostId;
+    window.location.href = `game.html?code=${code}&id=${hostId}`;
+  });
 
-function generateRoles(num) {
-  const roles = [];
-  const wolfCount = num <= 6 ? 1 : Math.ceil(num / 4);
-
-  for (let i = 0; i < wolfCount; i++) roles.push('狼人');
-  for (let i = 0; i < num - wolfCount - 2; i++) roles.push('村民');
-  roles.push('预言家');
-  roles.push('女巫');
-  if (num >= 8) roles.push('猎人');
-  if (num >= 9) roles.push('守卫');
-
-  return roles.sort(() => Math.random() - 0.5);
+  document.getElementById('joinBtn')?.addEventListener('click', () => {
+    const code = document.getElementById('gameCode').value.trim();
+    if (!code) return alert("请输入游戏码！");
+    
+    const data = JSON.parse(localStorage.getItem(`game_${code}`));
+    if (!data) return alert("游戏不存在或已过期！");
+    
+    const id = 'PLAYER_' + Date.now();
+    userId = id;
+    
+    window.location.href = `game.html?code=${code}&id=${id}`;
+  });
 }
 
 function renderGame() {
   const data = JSON.parse(localStorage.getItem(`game_${gameId}`));
   const player = data.players.find(p => p.id === userId);
 
-  document.getElementById('myRole').textContent = player?.role || '未知';
+  // 显示游戏码
+  document.getElementById('gameCodeDisplay').textContent = gameId;
 
-  const phase = data.phase;
-  document.getElementById('phaseText').textContent = phase === 'day' ? '🌞 白天' : '🌙 黑夜';
+  // 显示身份
+  document.getElementById('yourRole').textContent = player ? player.role : '未知';
 
-  // 显示玩家列表
-  const playerList = document.getElementById('playerList');
-  playerList.innerHTML = '';
-  data.players.forEach(p => {
-    const div = document.createElement('div');
-    div.textContent = `${p.name} (${p.role})`;
-    playerList.appendChild(div);
-  });
+  // 显示阶段
+  document.getElementById('phaseDisplay').textContent = getPhaseText(data.phase);
 
-  // 切换显示区域
-  const speechSection = document.getElementById('speechSection');
-  const nightSection = document.getElementById('nightSection');
-  const witchActions = document.getElementById('witchActions');
-  const hunterActions = document.getElementById('hunterActions');
-  const reviveAlert = document.getElementById('reviveAlert');
-
-  if (phase === 'day') {
-    speechSection.style.display = 'block';
-    nightSection.style.display = 'none';
-    witchActions.style.display = 'none';
-    hunterActions.style.display = 'none';
-    reviveAlert.style.display = 'none';
-  } else {
-    speechSection.style.display = 'none';
-    nightSection.style.display = 'block';
-    witchActions.style.display = 'none';
-    hunterActions.style.display = 'none';
-    reviveAlert.style.display = 'none';
-
-    if (player?.role === '女巫') {
-      witchActions.style.display = 'block';
-    }
-    if (player?.role === '猎人') {
-      hunterActions.style.display = 'block';
-    }
+  // 更新人数
+  const currentPlayers = document.getElementById('currentPlayers');
+  if (currentPlayers) {
+    currentPlayers.textContent = data.players.length;
   }
 
-  // 设置投票目标
-  const targetName = document.getElementById('targetName');
-  const randomPlayer = data.players[Math.floor(Math.random() * data.players.length)];
-  targetName.textContent = randomPlayer.name;
-
-  // 如果被复活
-  if (data.revived) {
-    reviveAlert.style.display = 'block';
+  // 如果是房主，显示控制面板
+  if (data.hostId === userId) {
+    document.getElementById('hostPanel').style.display = 'block';
+    document.getElementById('startGameBtn').style.display = 'block';
+  } else {
+    document.getElementById('hostPanel').style.display = 'none';
   }
 
-  // 播放阶段音效
-  if (phase === 'day') {
-    audio.day.play().catch(e => {});
-    Animations.fadeIn(document.getElementById('phaseText'));
-  } else {
-    audio.night.play().catch(e => {});
-    Animations.shake(document.getElementById('phaseText'));
+  // 根据阶段显示不同内容
+  showPhaseContent(data);
+}
+
+function getPhaseText(phase) {
+  switch (phase) {
+    case 'waiting': return '等待开始';
+    case 'night': return '夜晚';
+    case 'day': return '白天';
+    case 'end': return '游戏结束';
+    default: return '未知';
   }
 }
 
-// 事件绑定
-document.getElementById('createBtn')?.addEventListener('click', async () => {
-  const count = parseInt(document.getElementById('playerCount').value);
-  const code = Math.random().toString(36).substr(2, 6).toUpperCase();
+function showPhaseContent(data) {
+  const voteSection = document.getElementById('voteSection');
+  const actionSection = document.getElementById('actionSection');
+  const resultSection = document.getElementById('resultSection');
+  const nextPhaseBtn = document.getElementById('nextPhaseBtn');
 
-  const data = {
-    phase: 'waiting',
-    players: [],
-    votes: {},
-    killed: null,
-    saved: null,
-    poisoned: null,
-    deadPlayers: [],
-    revived: false,
-    createdAt: Date.now()
-  };
+  voteSection.style.display = 'none';
+  actionSection.style.display = 'none';
+  resultSection.style.display = 'none';
+  nextPhaseBtn.style.display = 'none';
 
-  localStorage.setItem(`game_${code}`, JSON.stringify(data));
+  if (data.phase === 'waiting') {
+    if (data.hostId === userId) {
+      document.getElementById('startGameBtn').style.display = 'block';
+    }
+  } else if (data.phase === 'night') {
+    actionSection.style.display = 'block';
+    document.getElementById('saveBtn').style.display = 'inline-block';
+    document.getElementById('poisonBtn').style.display = 'inline-block';
+    document.getElementById('shootBtn').style.display = 'inline-block';
+    document.getElementById('reviveBtn').style.display = 'inline-block';
+  } else if (data.phase === 'day') {
+    voteSection.style.display = 'block';
+    renderPlayersList();
+  } else if (data.phase === 'end') {
+    resultSection.style.display = 'block';
+    document.getElementById('resultText').textContent = "游戏结束！";
+    nextPhaseBtn.style.display = 'block';
+  }
+}
 
-  window.location.href = `game.html?code=${code}&id=${userId}`;
+function renderPlayersList() {
+  const container = document.getElementById('playersList');
+  container.innerHTML = '';
+
+  const data = JSON.parse(localStorage.getItem(`game_${gameId}`));
+  const players = data.players.filter(p => !p.dead);
+
+  players.forEach(player => {
+    const btn = document.createElement('button');
+    btn.className = 'player-btn';
+    btn.textContent = player.name;
+    btn.onclick = () => {
+      const selected = document.querySelectorAll('.player-btn.selected');
+      selected.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      localStorage.setItem(`selected_vote_${gameId}_${userId}`, player.id);
+    };
+    container.appendChild(btn);
+  });
+}
+
+document.getElementById('startGameBtn')?.addEventListener('click', () => {
+  const data = JSON.parse(localStorage.getItem(`game_${gameId}`));
+  if (data.hostId !== userId) return alert("只有房主才能开始游戏！");
+  
+  data.phase = 'night';
+  data.currentPlayers = data.players.length;
+  localStorage.setItem(`game_${gameId}`, JSON.stringify(data));
+
+  audio.night.play().catch(e => {});
+  window.location.reload();
 });
 
-document.getElementById('joinBtn')?.addEventListener('click', () => {
-  const code = document.getElementById('gameCode').value.trim().toUpperCase();
-  if (!code) return alert('请输入游戏码');
-  window.location.href = `game.html?code=${code}&id=${userId}`;
-});
+document.getElementById('submitVoteBtn')?.addEventListener('click', () => {
+  const data = JSON.parse(localStorage.getItem(`game_${gameId}`));
+  const selected = localStorage.getItem(`selected_vote_${gameId}_${userId}`);
+  if (!selected) return alert("请先选择一个玩家！");
 
-// 发言
-document.getElementById('speechInput')?.addEventListener('input', () => {
-  audio.speak.play().catch(e => {});
-});
+  data.votes[userId] = selected;
+  localStorage.setItem(`game_${gameId}`, JSON.stringify(data));
 
-// 投票
-document.getElementById('submitVote')?.addEventListener('click', () => {
   audio.vote.play().catch(e => {});
-  Animations.pulse(document.getElementById('submitVote'));
-  alert(`你投票给了 ${document.getElementById('targetName').textContent}`);
-});
-
-// 女巫救人
-document.getElementById('savePlayer')?.addEventListener('click', () => {
-  audio.save.play().catch(e => {});
-  Animations.floatUp(document.getElementById('savePlayer'));
-  alert('你使用了解药救了一个人！');
-});
-
-// 女巫投毒
-document.getElementById('poisonPlayer')?.addEventListener('click', () => {
-  audio.poison.play().catch(e => {});
-  Animations.shake(document.getElementById('poisonPlayer'));
-  alert('你使用了毒药！');
-});
-
-// 猎人开枪
-document.getElementById('shootPlayer')?.addEventListener('click', () => {
-  audio.shoot.play().catch(e => {});
-  Animations.pulse(document.getElementById('shootPlayer'));
-  alert('你开枪带走了一个人！');
-});
-
-// 复活提示
-document.getElementById('reviveAlert')?.addEventListener('click', () => {
-  audio.revive.play().catch(e => {});
-  Animations.pulse(document.getElementById('reviveAlert'));
+  alert("投票成功！");
 });

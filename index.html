@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🐺 狼人杀·无网版</title>
+  <title>🐺 狼人杀 · 无网版</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="script.js" defer></script>
 </head>
 <body>
   <div class="container">
@@ -36,6 +35,13 @@
     <!-- 创建游戏按钮 -->
     <button id="createBtn">✅ 创建游戏</button>
 
+    <!-- 房主控制面板（仅房主可见） -->
+    <div id="hostPanel" style="display:none; margin-top:20px; padding:15px; background:#f8f9fa; border-radius:10px;">
+      <h3>🎮 房主控制面板</h3>
+      <p>当前玩家：<span id="currentPlayers">0</span> / <span id="totalPlayers">0</span></p>
+      <button id="startGameBtn">▶️ 开始游戏</button>
+    </div>
+
     <!-- 加入游戏区域 -->
     <div class="section">
       <label>游戏码：</label>
@@ -45,5 +51,7 @@
 
     <p class="tip">💡 将此链接分享到微信群，朋友复制游戏码即可同步！</p>
   </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
